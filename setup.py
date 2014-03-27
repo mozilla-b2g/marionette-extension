@@ -24,5 +24,5 @@ setup(name='marionette_extension',
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
-      install_marionette = marionette_extension.installer:cli
+      install_marionette = marionette_extension.installer:install
       """)
