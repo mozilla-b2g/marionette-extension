@@ -1,5 +1,5 @@
 #!/bin/bash
 
-pushd bundles/1.3
-source push_bundles.sh
+pushd install_marionette 
+source push_bundles.sh 1.3
 popd

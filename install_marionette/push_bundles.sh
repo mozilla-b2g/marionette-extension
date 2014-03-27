@@ -1,22 +1,37 @@
 #!/bin/bash
+
+if [ -z "$1" ]; then
+  echo "You must specify a version number"
+  exit 1
+fi
+
+VERSION=$1
+
+if [ -z "$2" ]; then
+  PKG_DIR="bundles/$VERSION"
+else
+  PKG_DIR="$2/$VERSION"
+fi
+
 use_adb() {
   ACTION=$1
   EXTRA_EXPLANATION=$2
   shift 2
+  echo "Executing $@"
   adb $@
   if [ $? != 0 ]; then
     echo "Could not $ACTION. Is it listed on 'adb devices'?"
     echo "If not, please follow README instructions to setup adb on the device."
-    echo "If it is listed in 'adb devices', is the device rooted?"
-    if [ ! -z "$EXTRA_EXPLANATION"]; then
+    echo "If it is listed in 'adb devices', is the device rooted, and is the screen unlocked?"
+    if [ ! -z "$EXTRA_EXPLANATION" ]; then
       echo $EXTRA_EXPLANATION
     fi
     exit 1
   fi
 }
 use_adb "remount device" "" remount
-use_adb "push special-powers to the device" "If it is rooted, does the special-powers@mozilla.org folder exist in your current working directory?" push special-powers\@mozilla.org /system/b2g/distribution/bundles/special-powers\@mozilla.org
-use_adb "push marionette to the device" "If it is rooted, does the marionette@mozilla.org folder exist in your current working directory??" push marionette\@mozilla.org /system/b2g/distribution/bundles/marionette\@mozilla.org
+use_adb "push special-powers to the device" "" push $PKG_DIR/special-powers\@mozilla.org /system/b2g/distribution/bundles/special-powers\@mozilla.org
+use_adb "push marionette to the device" "" push $PKG_DIR/marionette\@mozilla.org /system/b2g/distribution/bundles/marionette\@mozilla.org
 use_adb "call adb shell to stop b2g" "" shell stop b2g
 use_adb "call adb shell to start b2g" "" shell start b2g
 echo "waiting for b2g to start"
