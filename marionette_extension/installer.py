@@ -1,7 +1,7 @@
 import pkg_resources
 import subprocess
 
-def cli():
+def install():
     #TODO: add --version when we support more than 1.3
     push_script = pkg_resources.resource_filename(__name__, "push_bundles.sh")
     pkg_path = pkg_resources.resource_filename(__name__, "bundles")
@@ -21,4 +21,4 @@ def cli():
         raise Exception("Failed to install extension: %s" % out)
 
 if __name__ == "__main__":
-    cli()
+    install()

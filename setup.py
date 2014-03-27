@@ -8,7 +8,7 @@ from setuptools import find_packages
 PACKAGE_VERSION = '0.1'
 deps = ['']
         
-setup(name='install_marionette',
+setup(name='marionette_extension',
       version=PACKAGE_VERSION,
       description="Installs Marionette as an extension on an FxOS device",
       classifiers=[],
@@ -17,12 +17,12 @@ setup(name='install_marionette',
       author_email='tools@lists.mozilla.org',
       url='https://github.com/mozilla-b2g/fxos-certsuite',
       license='MPL',
-      packages=['install_marionette'],
+      packages=['marionette_extension'],
       include_package_data=True,
       zip_safe=False,
       install_requires=deps,
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
-      install_marionette = install_marionette.installer:cli
+      install_marionette = marionette_extension.installer:cli
       """)
