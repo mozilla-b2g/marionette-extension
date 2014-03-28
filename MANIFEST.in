@@ -1,1 +1,2 @@
 recursive-include marionette_extension/bundles *
+include marionette_extension/push_bundles.sh

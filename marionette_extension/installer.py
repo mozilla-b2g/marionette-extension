@@ -5,7 +5,7 @@ def install():
     #TODO: add --version when we support more than 1.3
     push_script = pkg_resources.resource_filename(__name__, "push_bundles.sh")
     pkg_path = pkg_resources.resource_filename(__name__, "bundles")
-    proc = subprocess.Popen(["%s 1.3 %s" % (push_script, pkg_path)],
+    proc = subprocess.Popen(["bash %s 1.3 %s" % (push_script, pkg_path)],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,
                             shell=True)
