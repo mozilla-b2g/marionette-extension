@@ -5,7 +5,7 @@
 from setuptools import setup
 from setuptools import find_packages
 
-PACKAGE_VERSION = '0.2'
+PACKAGE_VERSION = '0.2.1'
 deps = ['']
         
 setup(name='marionette_extension',

@@ -29,7 +29,15 @@ use_adb() {
     exit 1
   fi
 }
-use_adb "remount device" "" remount
+echo "Executing remount"
+OUT=`adb remount`
+if [[ $OUT == *failed* ]]; then
+  echo "Could not remount. Is the device listed on 'adb devices'?"
+  echo "If not, please follow README instructions to setup adb on the device."
+  echo "If it is listed in 'adb devices', is the device rooted, and is the screen unlocked?"
+  echo "If this still fails, try running 'adb root' before running the tests"
+  exit 1
+fi
 use_adb "push special-powers to the device" "" push $PKG_DIR/special-powers\@mozilla.org /system/b2g/distribution/bundles/special-powers\@mozilla.org
 use_adb "push marionette to the device" "" push $PKG_DIR/marionette\@mozilla.org /system/b2g/distribution/bundles/marionette\@mozilla.org
 use_adb "call adb shell to stop b2g" "" shell stop b2g
