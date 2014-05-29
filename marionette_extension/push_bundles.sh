@@ -6,11 +6,12 @@ if [ -z "$1" ]; then
 fi
 
 VERSION=$1
+ADB=$2
 
-if [ -z "$2" ]; then
+if [ -z "$3" ]; then
   PKG_DIR="bundles/$VERSION"
 else
-  PKG_DIR="$2/$VERSION"
+  PKG_DIR="$3/$VERSION"
 fi
 
 use_adb() {
@@ -18,7 +19,7 @@ use_adb() {
   EXTRA_EXPLANATION=$2
   shift 2
   echo "Executing $@"
-  adb $@
+  $ADB $@
   if [ $? != 0 ]; then
     echo "Could not $ACTION. Is it listed on 'adb devices'?"
     echo "If not, please follow README instructions to setup adb on the device."

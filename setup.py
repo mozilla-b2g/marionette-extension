@@ -5,7 +5,7 @@
 from setuptools import setup
 from setuptools import find_packages
 
-PACKAGE_VERSION = '0.2.1'
+PACKAGE_VERSION = '0.3'
 deps = ['']
         
 setup(name='marionette_extension',
@@ -24,5 +24,5 @@ setup(name='marionette_extension',
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
-      install_marionette = marionette_extension.installer:install
+      install_marionette = marionette_extension.installer:cli
       """)

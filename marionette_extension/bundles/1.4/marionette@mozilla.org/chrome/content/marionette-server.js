@@ -39,7 +39,9 @@ let appName = Services.appinfo.name;
 this.dumpn = function dumpn(str) {
   logger.trace(str);
 }
-loader.loadSubScript("resource://gre/modules/devtools/DevToolsUtils.js");
+let { devtools } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+let DevToolsUtils = devtools.require("devtools/toolkit/DevToolsUtils.js");
+this.DevToolsUtils = DevToolsUtils;
 loader.loadSubScript("resource://gre/modules/devtools/server/transport.js");
 
 let bypassOffline = false;
@@ -134,6 +136,7 @@ function MarionetteServerConnection(aPrefix, aTransport, aServer)
   this.command_id = null;
   this.mainFrame = null; //topmost chrome frame
   this.curFrame = null; // chrome iframe that currently has focus
+  this.mainContentFrameId = null;
   this.importedScripts = FileUtils.getFile('TmpD', ['marionetteChromeScripts']);
   this.importedScriptHashes = {"chrome" : [], "content": []};
   this.currentFrameElement = null;
@@ -489,11 +492,14 @@ MarionetteServerConnection.prototype = {
    */
 
   /**
-   * Create a new session. This creates a BrowserObj.
+   * Create a new session. This creates a new BrowserObj.
    *
-   * In a desktop environment, this opens a new 'about:blank' tab for
-   * the client to test in.
+   * In a desktop environment, this opens a new browser with
+   * "about:blank" which subsequent commands will be sent to.
    *
+   * This will send a hash map of supported capabilities to the client
+   * as part of the Marionette:register IPC command in the
+   * receiveMessage callback when a new browser is created.
    */
   newSession: function MDA_newSession() {
     this.command_id = this.getCommandId();
@@ -507,54 +513,82 @@ MarionetteServerConnection.prototype = {
       if (!win ||
           (appName == "Firefox" && !win.gBrowser) ||
           (appName == "Fennec" && !win.BrowserApp)) {
-        checkTimer.initWithCallback(waitForWindow.bind(this), 100, Ci.nsITimer.TYPE_ONE_SHOT);
+        checkTimer.initWithCallback(waitForWindow.bind(this), 100,
+                                    Ci.nsITimer.TYPE_ONE_SHOT);
       }
       else {
         this.startBrowser(win, true);
       }
     }
 
-
     if (!Services.prefs.getBoolPref("marionette.contentListener")) {
       waitForWindow.call(this);
     }
     else if ((appName != "Firefox") && (this.curBrowser == null)) {
-      //if there is a content listener, then we just wake it up
+      // If there is a content listener, then we just wake it up
       this.addBrowser(this.getCurrentWindow());
-      this.curBrowser.startSession(false, this.getCurrentWindow(), this.whenBrowserStarted);
+      this.curBrowser.startSession(false, this.getCurrentWindow(),
+                                   this.whenBrowserStarted);
       this.messageManager.broadcastAsyncMessage("Marionette:restart", {});
     }
     else {
-      this.sendError("Session already running", 500, null, this.command_id);
+      this.sendError("Session already running", 500, null,
+                     this.command_id);
     }
     this.switchToGlobalMessageManager();
   },
 
-  getSessionCapabilities: function MDA_getSessionCapabilities(){
+  /**
+   * Send the current session's capabilities to the client.
+   *
+   * Capabilities informs the client of which WebDriver features are
+   * supported by Firefox and Marionette.  They are immutable for the
+   * length of the session.
+   *
+   * The return value is an immutable map of string keys
+   * ("capabilities") to values, which may be of types boolean,
+   * numerical or string.
+   */
+  getSessionCapabilities: function MDA_getSessionCapabilities() {
     this.command_id = this.getCommandId();
 
-    let rotatable = appName == "B2G" ? true : false;
+    let isB2G = appName == "B2G";
+    let platformName = Services.appinfo.OS.toUpperCase();
 
-    let value = {
-          'appBuildId' : Services.appinfo.appBuildID,
-          'XULappId' : Services.appinfo.ID,
-          'cssSelectorsEnabled': true,
-          'browserName': appName,
-          'handlesAlerts': false,
-          'javascriptEnabled': true,
-          'nativeEvents': false,
-          'platform': Services.appinfo.OS,
-          'platformName': Services.appinfo.OS,
-          'platformVersion': Services.appinfo.platformVersion,
-          'secureSsl': false,
-          'device': qemu == "1" ? "qemu" : (!device ? "desktop" : device),
-          'rotatable': rotatable,
-          'takesScreenshot': true,
-          'takesElementScreenshot': true,
-          'version': Services.appinfo.version
+    let caps = {
+      // Mandated capabilities
+      "browserName": appName,
+      "browserVersion": Services.appinfo.version,
+      "platformName": platformName,
+      "platformVersion": Services.appinfo.platformVersion,
+
+      // Supported features
+      "cssSelectorsEnabled": true,
+      "handlesAlerts": false,
+      "javascriptEnabled": true,
+      "nativeEvents": false,
+      "rotatable": isB2G,
+      "secureSsl": false,
+      "takesElementScreenshot": true,
+      "takesScreenshot": true,
+
+      // Selenium 2 compat
+      "platform": platformName,
+
+      // Proprietary extensions
+      "XULappId" : Services.appinfo.ID,
+      "appBuildId" : Services.appinfo.appBuildID,
+      "device": qemu == "1" ? "qemu" : (!device ? "desktop" : device),
+      "version": Services.appinfo.version
     };
 
-    this.sendResponse(value, this.command_id);
+    // eideticker (bug 965297) and mochitest (bug 965304)
+    // compatibility.  They only check for the presence of this
+    // property and should so not be in caps if not on a B2G device.
+    if (isB2G)
+      caps.b2g = true;
+
+    this.sendResponse(caps, this.command_id);
   },
 
   /**
@@ -2095,6 +2129,17 @@ MarionetteServerConnection.prototype = {
     this._emu_cb_id += 1;
   },
 
+  runEmulatorShell: function runEmulatorShell(args, callback) {
+    if (callback) {
+      if (!this._emu_cbs) {
+        this._emu_cbs = {};
+      }
+      this._emu_cbs[this._emu_cb_id] = callback;
+    }
+    this.sendToClient({emulator_shell: args, id: this._emu_cb_id}, -1);
+    this._emu_cb_id += 1;
+  },
+
   emulatorCmdResult: function emulatorCmdResult(message) {
     if (this.context != "chrome") {
       this.sendAsync("emulatorCmdResult", message, -1);
@@ -2292,6 +2337,7 @@ MarionetteServerConnection.prototype = {
         }
         break;
       case "Marionette:runEmulatorCmd":
+      case "Marionette:runEmulatorShell":
         this.sendToClient(message.json, -1);
         break;
       case "Marionette:switchToFrame":
@@ -2348,10 +2394,17 @@ MarionetteServerConnection.prototype = {
           // browserType remains undefined.
         }
         let reg = {};
+        // this will be sent to tell the content process if it is the main content
+        let mainContent = (this.curBrowser.mainContentId == null);
         if (!browserType || browserType != "content") {
           //curBrowser holds all the registered frames in knownFrames
           reg.id = this.curBrowser.register(this.generateFrameId(message.json.value),
                                             listenerWindow);
+        }
+        // set to true if we updated mainContentId
+        mainContent = ((mainContent == true) && (this.curBrowser.mainContentId != null));
+        if (mainContent) {
+          this.mainContentFrameId = this.curBrowser.curFrameId;
         }
         this.curBrowser.elementManager.seenItems[reg.id] = Cu.getWeakReference(listenerWindow);
         if (nullPrevious && (this.curBrowser.curFrameId != null)) {
@@ -2361,11 +2414,17 @@ MarionetteServerConnection.prototype = {
             return;
           }
           if (this.curBrowser.newSession) {
-            this.sendResponse(reg.id, this.newSessionCommandId);
+            this.getSessionCapabilities();
             this.newSessionCommandId = null;
           }
         }
-        return reg;
+        return [reg, mainContent];
+      case "Marionette:emitTouchEvent":
+        let globalMessageManager = Cc["@mozilla.org/globalmessagemanager;1"]
+                             .getService(Ci.nsIMessageBroadcaster);
+        globalMessageManager.broadcastAsyncMessage(
+          "MarionetteMainListener:emitTouchEvent", message.json);
+        return;
     }
   }
 };
@@ -2551,7 +2610,7 @@ BrowserObj.prototype = {
    *        frame to load the script in
    */
   loadFrameScript: function BO_loadFrameScript(script, frame) {
-    frame.window.messageManager.loadFrameScript(script, true);
+    frame.window.messageManager.loadFrameScript(script, true, true);
     Services.prefs.setBoolPref("marionette.contentListener", true);
   },
 
