@@ -62,6 +62,7 @@ def install(version, adb="adb"):
 
 def uninstall(adb="adb"):
     dm = DeviceManagerADB(adbPath=adb)
+    dm.remount()
     if dm.dirExists(INSTALL_DIR):
         dm.removeDir(INSTALL_DIR)
 
