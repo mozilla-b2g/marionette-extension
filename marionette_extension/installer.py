@@ -5,24 +5,35 @@ from mozdevice import DeviceManagerADB
 import socket
 
 SUPPORTED_VERSIONS=['1.3', '1.4']
-
+INSTALL_DIR = "/system/b2g/distribution/bundles/marionette@mozilla.org"
 
 class MarionetteInstallationException(Exception):
     pass
 
 def cli():
-    parser = OptionParser(usage="usage: %prog [options] version",
+    parser = OptionParser(usage="usage: %prog [options]",
                                  description="Installs Marionette as an extension " \
                                 "on the device, given the device's build version. " \
-                                "Accepted versions are: 1.3 or 1.4")
+                                "Accepted versions are: %s. This tool can also be used " \
+                                "to uninstall the extension" % SUPPORTED_VERSIONS)
     parser.add_option("--adb-path", dest="adb_path", default="adb",
-                        help="path to adb executable. If not passed, we assume"\
+                        help="path to adb executable. If not passed, we assume" \
                         " that 'adb' is on the path")
+    parser.add_option("--uninstall", dest="uninstall", default=False, action="store_true",
+                      help="Uninstalls the Marionette extension")
+    parser.add_option("--install", dest="install", default=False, action="store_true",
+                      help="If --install is passed, you must pass in a version number, " \
+                      "one of: %s" % SUPPORTED_VERSIONS)
     (options, args) = parser.parse_args()
-    if len(args) != 1:
+    if options.install and len(args) != 1:
         raise Exception("please enter a version number, one of: %s" % SUPPORTED_VERSIONS)
-    version = args[0]
-    install(version, options.adb_path)
+    if options.uninstall:
+        print "Uninstalling Marionette extension"
+        uninstall()
+    if options.install:
+        print "Installing Marionette extension"
+        version = args[0]
+        install(version, options.adb_path)
 
 
 def install(version, adb="adb"):
@@ -49,9 +60,15 @@ def install(version, adb="adb"):
         raise MarionetteInstallationException("Marionette is already installed")
 
 
+def uninstall(adb="adb"):
+    dm = DeviceManagerADB(adbPath=adb)
+    if dm.dirExists(INSTALL_DIR):
+        dm.removeDir(INSTALL_DIR)
+
+
 def check_marionette_exists(adb="adb"):
     dm = DeviceManagerADB(adbPath=adb)
-    if dm.dirExists("/system/b2g/distribution/bundles/marionette@mozilla.org"):
+    if dm.dirExists(INSTALL_DIR):
         return True
     else:
         if dm.forward("tcp:2828", "tcp:2828") != 0:
