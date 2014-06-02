@@ -5,6 +5,11 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+if [ -z "$2" ]; then
+  echo "You must specify an adb path"
+  exit 1
+fi
+
 VERSION=$1
 ADB=$2
 
