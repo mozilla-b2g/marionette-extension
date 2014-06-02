@@ -10,6 +10,9 @@ INSTALL_DIR = "/system/b2g/distribution/bundles/marionette@mozilla.org"
 class MarionetteInstallationException(Exception):
     pass
 
+class AlreadyInstalledException(MarionetteInstallationException):
+    pass
+
 def cli():
     parser = OptionParser(usage="usage: %prog [options]",
                                  description="Installs Marionette as an extension " \
@@ -57,7 +60,7 @@ def install(version, adb="adb"):
             out = proc.stdout.read() or last_line
             raise MarionetteInstallationException("Failed to install extension: %s" % out)
     else:
-        raise MarionetteInstallationException("Marionette is already installed")
+        raise AlreadyInstalledException("Marionette is already installed")
 
 
 def uninstall(adb="adb"):

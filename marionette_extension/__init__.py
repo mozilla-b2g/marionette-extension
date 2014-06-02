@@ -1,1 +1,1 @@
-from installer import install
+from installer import *
