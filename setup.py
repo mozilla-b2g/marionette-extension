@@ -5,7 +5,7 @@
 from setuptools import setup
 from setuptools import find_packages
 
-PACKAGE_VERSION = '0.4.5'
+PACKAGE_VERSION = '0.4.6'
 deps = ['mozdevice']
         
 setup(name='marionette_extension',

@@ -75,10 +75,7 @@ def check_marionette_exists(adb="adb"):
     if dm.dirExists(INSTALL_DIR):
         return True
     else:
-        if dm.forward("tcp:2828", "tcp:2828") != 0:
-            # This is not a marionette installation exception, this is more general
-            raise Exception("Can't use localhost:2828 for checking if marionette exists." \
-                            "Is something else using port 2828?")
+        dm.forward("tcp:2828", "tcp:2828") != 0:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(('localhost', 2828))
