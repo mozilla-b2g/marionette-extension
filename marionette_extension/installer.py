@@ -75,7 +75,7 @@ def check_marionette_exists(adb="adb"):
     if dm.dirExists(INSTALL_DIR):
         return True
     else:
-        dm.forward("tcp:2828", "tcp:2828") != 0:
+        dm.forward("tcp:2828", "tcp:2828")
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(('localhost', 2828))
