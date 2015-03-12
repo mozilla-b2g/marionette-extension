@@ -7,12 +7,12 @@ provided your phone is connected via ADB::
 
   source install_marionette_extension.sh VERSION
 
-Where VERSION  is a supported version number, one of: 1.3, 1.4, 2.0, or 2.1.
+Where VERSION  is a supported version number, one of: 1.3, 1.4, 2.0, 2.1, or 2.2.
 
 If you need to install adb, see 
 https://developer.mozilla.org/en-US/Firefox_OS/Debugging/Installing_ADB.
 
-FirefoxOS v1.3 through v2.1 are currently supported.
+FirefoxOS v1.3 through v2.2 are currently supported.
 
 Python Package
 ==============
