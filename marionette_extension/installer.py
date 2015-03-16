@@ -4,7 +4,7 @@ from optparse import OptionParser
 from mozdevice import DeviceManagerADB
 import socket
 
-SUPPORTED_VERSIONS=['1.3', '1.4', '2.0', '2.1']
+SUPPORTED_VERSIONS=['1.3', '1.4', '2.0', '2.1', '2.2']
 INSTALL_DIR = "/system/b2g/distribution/bundles/marionette@mozilla.org"
 
 class MarionetteInstallationException(Exception):
