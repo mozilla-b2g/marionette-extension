@@ -38,7 +38,7 @@ and use its install function to install marionette via a script. Example::
 
 
 How to add a new version?
-==============
+=========================
 
 0. Create a new folder indicating your new gecko version
 1. > hg clone https://hg.mozilla.org/mozilla-central/
